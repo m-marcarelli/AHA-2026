@@ -1,0 +1,5 @@
+NORMAL_OP_FAIL
+TROJAN_TRIGGERED
+TEST_COMPLETE
+/Users/marissa/HOST_AHA_Challenge_2026/pipeline/output/trojan_3/tb_trojan_3.v:199: $finish called at 765000000000 (1ns)
+ — missing markers: ['NORMAL_OP_PASS']

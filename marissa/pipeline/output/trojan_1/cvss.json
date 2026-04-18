@@ -1,0 +1,13 @@
+{
+  "AV": "L",
+  "AC": "L",
+  "PR": "L",
+  "UI": "N",
+  "S": "U",
+  "C": "H",
+  "I": "N",
+  "A": "N",
+  "score": 6.3,
+  "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+  "justification": "AV is Local because the attacker requires local access to the WISHBONE bus; AC is Low because the trigger can be easily satisfied with a specific input value; PR is Low as only low privileges are needed to write the required data to trigger the Trojan; UI is None as no user interaction is needed; S is Unchanged because the exploit remains within the same security scope; C is High because the attack exfiltrates confidential data; I and A are None as there is no integrity or availability impact."
+}

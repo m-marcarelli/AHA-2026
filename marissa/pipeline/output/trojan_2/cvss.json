@@ -1,0 +1,13 @@
+{
+  "AV": "L",
+  "AC": "L",
+  "PR": "L",
+  "UI": "N",
+  "S": "C",
+  "C": "N",
+  "I": "H",
+  "A": "L",
+  "score": 7.6,
+  "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L",
+  "justification": "AV:L because the attacker needs local access to the bus; AC:L since the trigger condition is specific but not complex to formulate; PR:L because low-level access is needed to write to the bus; UI:N since no user interaction is necessary; S:C because the attack crosses the trust boundary between local system and network peers; C:N as there is no exposure of sensitive information; I:H since the corruption of transmitted frames strongly undermines data integrity; A:L due to the denial of service in communication by frame corruption."
+}

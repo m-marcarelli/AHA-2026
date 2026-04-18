@@ -1,0 +1,4 @@
+NORMAL_OP_PASS
+TROJAN_TRIGGERED
+TEST_COMPLETE
+/Users/marissa/HOST_AHA_Challenge_2026/pipeline/output/trojan_3/tb_trojan_3.v:191: $finish called at 1056000000000 (1ns)

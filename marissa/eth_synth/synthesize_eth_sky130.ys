@@ -1,0 +1,28 @@
+# Read ethmac source files
+read_verilog ../ethmac/rtl/verilog/ethmac.v ../ethmac/rtl/verilog/ethmac_defines.v ../ethmac/rtl/verilog/eth_miim.v ../ethmac/rtl/verilog/eth_clockgen.v ../ethmac/rtl/verilog/eth_shiftreg.v ../ethmac/rtl/verilog/eth_outputcontrol.v ../ethmac/rtl/verilog/eth_registers.v ../ethmac/rtl/verilog/eth_register.v ../ethmac/rtl/verilog/eth_maccontrol.v ../ethmac/rtl/verilog/eth_receivecontrol.v ../ethmac/rtl/verilog/eth_transmitcontrol.v ../ethmac/rtl/verilog/eth_txethmac.v ../ethmac/rtl/verilog/eth_txcounters.v ../ethmac/rtl/verilog/eth_txstatem.v ../ethmac/rtl/verilog/eth_rxethmac.v ../ethmac/rtl/verilog/eth_rxcounters.v ../ethmac/rtl/verilog/eth_rxstatem.v ../ethmac/rtl/verilog/eth_rxaddrcheck.v ../ethmac/rtl/verilog/eth_crc.v ../ethmac/rtl/verilog/eth_wishbone.v ../ethmac/rtl/verilog/eth_spram_256x32.v ../ethmac/rtl/verilog/eth_fifo.v ../ethmac/rtl/verilog/eth_macstatus.v ../ethmac/rtl/verilog/eth_random.v
+
+# Read the skywater130 liberty file
+read_liberty -lib ./sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Elaborate hierarchy for the specific top module
+hierarchy -check -top ethmac
+proc; opt
+flatten
+
+# Handle memories and map internal logic
+memory; opt
+techmap; opt
+
+# Map flip-flops to SkyWater library FF cells
+dfflibmap -liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Map combinational logic to SkyWater library cells
+abc -liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib -D 1000
+tee -o ./metrics/timing_report.txt ltp
+
+# Report area and dump to the metrics folder
+tee -o ./metrics/area_report.txt stat -liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Write out the final synthesized netlist for OpenSTA
+write_verilog ./synth_outputs/eth_synth_sky130.v
+

@@ -1,0 +1,28 @@
+# Read aes source files
+read_verilog ../aes/src/rtl/aes.v ../aes/src/rtl/aes_core.v ../aes/src/rtl/aes_sbox.v ../aes/src/rtl/aes_key_mem.v ../aes/src/rtl/aes_inv_sbox.v ../aes/src/rtl/aes_decipher_block.v ../aes/src/rtl/aes_encipher_block.v
+
+# Read the skywater130 liberty file
+read_liberty -lib ./sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Elaborate hierarchy for the specific top module
+hierarchy -check -top aes
+proc; opt
+flatten
+
+# Handle memories and map internal logic
+memory; opt
+techmap; opt
+
+# Map flip-flops to SkyWater library FF cells
+dfflibmap -liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Map combinational logic to SkyWater library cells
+abc -liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib -D 1000
+tee -o ./metrics/timing_report.txt ltp
+
+# Report area and dump to the metrics folder
+tee -o ./metrics/area_report.txt stat -liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Write out the final synthesized netlist for OpenSTA
+write_verilog ./synth_outputs/aes_synth_sky130.v
+

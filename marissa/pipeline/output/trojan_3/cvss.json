@@ -1,0 +1,13 @@
+{
+  "AV": "L",
+  "AC": "H",
+  "PR": "L",
+  "UI": "N",
+  "S": "U",
+  "C": "N",
+  "I": "N",
+  "A": "H",
+  "score": 6.5,
+  "vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H",
+  "justification": "AV is Local because the attack requires direct interaction with system internals via Wishbone bus. AC is High due to the need to achieve a very specific data condition on the bus. PR is Low because access to hardware internals, but not elevated privileges, is necessary. UI is None as no user interaction is required after the conditions are met. S is Unchanged as the attack does not cross a trust boundary. C is None because confidentiality is not breached. I is None as it does not alter data directly. A is High as the payload causes a persistent denial of service on one-way data transmission."
+}

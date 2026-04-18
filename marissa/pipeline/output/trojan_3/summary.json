@@ -1,0 +1,29 @@
+{
+  "trojan_id": "trojan_3",
+  "name": "SilentMute",
+  "target_file": "ethmac.v",
+  "trigger": "wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i); sets trojan_armed <= 1'b1 (sticky until hard reset)",
+  "payload": "Availability: gate the MII transmit-enable output so that assign mtxen_pad_o = trojan_armed ? 1'b0 : mtxen_int. Once armed, the MAC permanently stops asserting TX_EN, so the PHY transmits nothing while the host-visible CSRs, TX FIFO, and interrupt logic continue to look healthy (TX descriptors appear to complete). Produces a persistent, hard-to-diagnose one-way link-dead condition. One new 1-bit flop, one 32-bit comparator, zero new datapath.",
+  "cvss": {
+    "AV": "L",
+    "AC": "H",
+    "PR": "L",
+    "UI": "N",
+    "S": "U",
+    "C": "N",
+    "I": "N",
+    "A": "H",
+    "score": 6.5,
+    "vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H",
+    "justification": "AV is Local because the attack requires direct interaction with system internals via Wishbone bus. AC is High due to the need to achieve a very specific data condition on the bus. PR is Low because access to hardware internals, but not elevated privileges, is necessary. UI is None as no user interaction is required after the conditions are met. S is Unchanged as the attack does not cross a trust boundary. C is None because confidentiality is not breached. I is None as it does not alter data directly. A is High as the payload causes a persistent denial of service on one-way data transmission."
+  },
+  "cvss_notes": "AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:N/A:H \u2014 Base 8.1. Permanent denial of Ethernet transmit until power-on reset; scope-changed because the host loses all network egress while believing the NIC is operational.",
+  "sim_passed": true,
+  "ppa": {
+    "area": 416323.0368,
+    "slack": null,
+    "ppa_success": true
+  },
+  "golden_area": 416177.8976,
+  "golden_slack": 0.0
+}

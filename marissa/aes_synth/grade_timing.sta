@@ -1,0 +1,22 @@
+# Setup units to match skywater130
+set_cmd_units -time ns -capacitance pF -current mA -voltage V -resistance kOhm -distance um
+
+# Read the skywater130 liberty file
+read_liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# Read the synthesized netlist from Yosys
+read_verilog ./synth_outputs/aes_synth_sky130.v
+
+# Link top module
+link_design aes
+
+# Define timing constraints for a 25ns (40MHz) clock
+create_clock -name core_clock -period 25.0 [get_ports clk]
+
+# Apply input/output delays
+set_input_delay 0.0 -clock core_clock [all_inputs -no_clocks]
+set_output_delay 0.0 -clock core_clock [all_outputs]
+
+# Report the longest path
+report_checks -path_delay max -format end -digits 4 > ./metrics/sta_report.txt
+exit

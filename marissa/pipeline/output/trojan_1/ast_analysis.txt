@@ -1,0 +1,12 @@
+=== ORIGINAL ===
+AST Summary for ethmac.v:
+
+Module: ethmac
+  Ports: wb_clk_i, wb_rst_i, wb_dat_i, wb_dat_o, wb_adr_i, wb_sel_i, wb_we_i, wb_cyc_i, wb_stb_i, wb_ack_o, wb_err_o, m_wb_adr_o, m_wb_sel_o, m_wb_we_o, m_wb_dat_o, m_wb_dat_i, m_wb_cyc_o, m_wb_stb_o, m_wb_ack_i, m_wb_err_i, m_wb_cti_o, m_wb_bte_o, mtx_clk_pad_i, mtxd_pad_o, mtxen_pad_o, mtxerr_pad_o, mrx_clk_pad_i, mrxd_pad_i, mrxdv_pad_i, mrxerr_pad_i, mcoll_pad_i, mcrs_pad_i, mdc_pad_o, md_pad_i, md_pad_o, md_padoe_o, int_o
+  Continuous assigns driving: ByteSelected, <pyverilog.vparser.ast.Pointer object at 0x1290f0bf0>, <pyverilog.vparser.ast.Pointer object at 0x1290f1490>, <pyverilog.vparser.ast.Pointer object at 0x1290f1d90>, <pyverilog.vparser.ast.Pointer object at 0x1290f2690>, <pyverilog.vparser.ast.Pointer object at 0x1290f2f90>, <pyverilog.vparser.ast.Pointer object at 0x1290f3830>, <pyverilog.vparser.ast.Pointer object at 0x1290e8110>, <pyverilog.vparser.ast.Pointer object at 0x1290e89b0>, CsMiss, temp_wb_dat_o, temp_wb_err_o, wb_ack_o, <pyverilog.vparser.ast.Partselect object at 0x1073df240>, wb_err_o, temp_wb_ack_o, MRxDV_Lb, MRxErr_Lb, <pyverilog.vparser.ast.Partselect object at 0x128e01f50>, TxCarrierSense, Collision, Transmitting, m_wb_adr_o
+  Always blocks: 14
+  Key registers: WillSendControlFrame_sync1, WillSendControlFrame_sync2, WillSendControlFrame_sync3, RstTxPauseRq, TxPauseRq_sync1, TxPauseRq_sync2, TxPauseRq_sync3, TPauseRq, temp_wb_ack_o_reg, temp_wb_dat_o_reg, temp_wb_err_o_reg, CarrierSense_Tx1, CarrierSense_Tx2, Collision_Tx1, Collision_Tx2, RxEnSync, WillTransmit_q, WillTransmit_q2, RxAbort_latch, RxAbort_sync1
+  Key wires: m_wb_adr_tmp, wb_dbg_dat0, r_ClkDiv, r_MiiNoPre, r_CtrlData, r_FIAD, r_RGAD, r_WCtrlData, r_RStat, r_ScanStat, NValid_stat, Busy_stat, LinkFail, Prsd, WCtrlDataStart, RStatStart, UpdateMIIRX_DATAReg, TxStartFrm, TxEndFrm, TxUsedData
+
+=== MODIFIED ===
+PyVerilog parse note: None: at end of input — proceeding with RTL text only

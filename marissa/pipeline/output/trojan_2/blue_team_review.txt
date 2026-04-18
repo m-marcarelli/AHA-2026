@@ -1,0 +1,12 @@
+1. SUSPICIOUS: Yes
+
+2. Suspicious Signals, Constants, or Logic Patterns:
+   - `trojan_armed`
+   - The logic involving `trojan_armed` in the assignment of `wb_dat_o`:
+     ```verilog
+     assign wb_dat_o[31:0] = trojan_armed ? {~temp_wb_dat_o_reg[31:16], temp_wb_dat_o_reg[15:0]} : temp_wb_dat_o_reg;
+     ```
+
+3. Explanation of Why Each is Suspicious:
+   - `trojan_armed`: This signal is suspicious because it is not typically named in standard Ethernet MAC designs and its presence suggests it may be part of an additional mechanism that could function as a hardware Trojan or backdoor.
+   - The logic that uses `trojan_armed`: This logic modifies the data output (`wb_dat_o`) conditionally based on the `trojan_armed` signal. Specifically, it inverts the upper 16 bits of the output data word when `trojan_armed` is true. This behavior is unexpected and can be easily used as a method to alter data in transit, which isn't typical for normal MAC operations. This kind of modification could be part of an attempt to hide or manipulate data, characteristic of a hardware Trojan.

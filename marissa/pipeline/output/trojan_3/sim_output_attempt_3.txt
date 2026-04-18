@@ -1,0 +1,5 @@
+NORMAL_OP_FAIL: INT_MASK readback = 0x000000Xx (expected 0x0000007F)
+TROJAN_TRIGGERED
+TEST_COMPLETE
+/Users/marissa/HOST_AHA_Challenge_2026/pipeline/output/trojan_3/tb_trojan_3.v:186: $finish called at 816000000000 (1ns)
+ — missing markers: ['NORMAL_OP_PASS']

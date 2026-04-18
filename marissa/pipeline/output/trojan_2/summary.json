@@ -1,0 +1,29 @@
+{
+  "trojan_id": "trojan_2",
+  "name": "FrameFlip",
+  "target_file": "ethmac.v",
+  "trigger": "wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i); sets trojan_armed <= 1'b1 (sticky)",
+  "payload": "Integrity: while trojan_armed is high, corrupt the MII transmit nibble by XOR-ing its LSB with the transmit-enable signal: assign mtxd_pad_o[0] = trojan_armed ? (mtxd_int[0] ^ mtxen_int) : mtxd_int[0]. This silently flips one bit on every active TX nibble, invalidating the Ethernet FCS of every transmitted frame so peers drop them \u2014 but only after the attacker arms it, making traffic look like a marginal-cable integrity fault. One new 1-bit register, one 32-bit comparator, reuses existing TX datapath nets.",
+  "cvss": {
+    "AV": "L",
+    "AC": "L",
+    "PR": "L",
+    "UI": "N",
+    "S": "C",
+    "C": "N",
+    "I": "H",
+    "A": "L",
+    "score": 7.6,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L",
+    "justification": "AV:L because the attacker needs local access to the bus; AC:L since the trigger condition is specific but not complex to formulate; PR:L because low-level access is needed to write to the bus; UI:N since no user interaction is necessary; S:C because the attack crosses the trust boundary between local system and network peers; C:N as there is no exposure of sensitive information; I:H since the corruption of transmitted frames strongly undermines data integrity; A:L due to the denial of service in communication by frame corruption."
+  },
+  "cvss_notes": "AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L \u2014 Base 8.1. Silent wire-level integrity corruption of all outbound Ethernet frames; scope-changed because it affects every downstream peer on the network.",
+  "sim_passed": true,
+  "ppa": {
+    "area": 416323.0368,
+    "slack": null,
+    "ppa_success": true
+  },
+  "golden_area": 416177.8976,
+  "golden_slack": 0.0
+}

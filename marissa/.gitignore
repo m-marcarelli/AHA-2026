@@ -1,0 +1,6 @@
+*.lib
+*.pyc
+__pycache__/
+sim_out
+parser.out
+parsetab.py

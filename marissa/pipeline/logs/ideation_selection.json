@@ -1,0 +1,29 @@
+{
+  "reasoning": "Both proposals target ethmac.v with magic-constant WB triggers, which aligns well with the hard constraints. GPT4O's Phantom Packet Injector is a clean integrity attack via XOR on wb_dat_o - perfect fit after simplification to single-register latch. Claude's SilentLeak is too complex (two-stage, multi-register) but the core idea of leaking data via wb_dat_o substitution can be distilled into a single-register confidentiality trojan that zeroes/masks wb_dat_o to leak zeros or forces a known pattern. For availability, neither explicitly proposed one, but Claude mentioned gating mtxen_pad_o - we synthesize an availability trojan that forces mtxen_pad_o low once armed, silently dropping all outgoing Ethernet frames. All three use exactly one trojan_armed 1-bit register, one 32-bit magic comparison, distinct artificial constants, and hit three different CIA pillars.",
+  "trojans": [
+    {
+      "id": "trojan_1",
+      "name": "SilentLeak-Zero (Confidentiality)",
+      "target_file": "ethmac.v",
+      "trigger": "wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register, sticky until wb_rst_i)",
+      "payload": "Once trojan_armed is set, force wb_dat_o to expose the internal temp_wb_dat_o_reg XORed with a fixed leak-mask that causes MAC address / hash filter / control register reads to return attacker-recoverable values. Concretely: assign wb_dat_o = trojan_armed ? (temp_wb_dat_o_reg ^ 32'hFFFFFFFF) : temp_wb_dat_o_reg; \u2014 the bitwise inversion makes an attacker with read access trivially recover the true internal register contents (MAC address, hash table, TX/RX BD pointers) that would otherwise be access-controlled or masked by software, enabling exfiltration of cryptographic filtering state and DMA descriptor pointers through any readable CSR.",
+      "cvss_notes": "CVSS v3.1 AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N \u2248 7.7 (High). Network-reachable via driver, low complexity once magic is known, changed scope (MAC internal state exposed to host address space), high confidentiality impact."
+    },
+    {
+      "id": "trojan_2",
+      "name": "Phantom Packet Injector (Integrity)",
+      "target_file": "ethmac.v",
+      "trigger": "wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register, sticky until wb_rst_i)",
+      "payload": "Once trojan_armed is set, corrupt outbound Ethernet nibble stream by XOR-flipping mtxd_pad_o: assign mtxd_pad_o = trojan_armed ? (mtxd_int ^ 4'b0101) : mtxd_int; This silently corrupts every transmitted frame's payload/FCS nibbles, causing receivers to drop frames (CRC failure) or, for frames where corruption lands in payload before FCS regeneration upstream, deliver altered data. Acts as a persistent integrity attack on all egress traffic.",
+      "cvss_notes": "CVSS v3.1 AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L \u2248 8.1 (High). Changed scope (affects downstream network peers), high integrity impact on all transmitted frames."
+    },
+    {
+      "id": "trojan_3",
+      "name": "TX Kill-Switch (Availability)",
+      "target_file": "ethmac.v",
+      "trigger": "wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register, sticky until wb_rst_i)",
+      "payload": "Once trojan_armed is set, force the MII transmit enable signal low permanently: assign mtxen_pad_o = trojan_armed ? 1'b0 : mtxen_int; The MAC continues to appear functional from the host/Wishbone side (TX FIFO drains, BDs marked done, status registers update normally) but no frames ever physically leave the PHY interface, producing a complete stealth denial-of-service on egress until power-cycle reset.",
+      "cvss_notes": "CVSS v3.1 AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H \u2248 6.5 (Medium-High); with scope-change argument for network-segment DoS: S:C bumps to ~7.7 (High). High availability impact, permanent until reset."
+    }
+  ]
+}
