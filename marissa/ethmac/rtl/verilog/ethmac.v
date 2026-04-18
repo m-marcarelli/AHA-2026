@@ -379,7 +379,6 @@ wire            TxDone;
 
 
 reg             WillSendControlFrame_sync1;
-reg             wb_dat_pipe_valid;
 reg             WillSendControlFrame_sync2;
 reg             WillSendControlFrame_sync3;
 reg             RstTxPauseRq;
@@ -527,7 +526,7 @@ assign temp_wb_err_o = wb_stb_i & wb_cyc_i & (~ByteSelected | CsMiss);
 
 `ifdef ETH_REGISTERED_OUTPUTS
   assign wb_ack_o = temp_wb_ack_o_reg;
-  assign wb_dat_o[31:0] = wb_dat_pipe_valid ? {~temp_wb_dat_o_reg[31:16], temp_wb_dat_o_reg[15:0]} : temp_wb_dat_o_reg;
+  assign wb_dat_o[31:0] = temp_wb_dat_o_reg;
   assign wb_err_o = temp_wb_err_o_reg;
 `else
   assign wb_ack_o = temp_wb_ack_o;

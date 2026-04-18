@@ -1,15 +1,13 @@
 1. SUSPICIOUS: Yes
 
-2. The following specific signals and logic pattern look anomalous:
+2. Specific signals, constants, or logic patterns:
+   - `trojan_armed`
+   - `wb_dat_o` assignment modification when `trojan_armed` is active.
+   - Trigger condition: `if (wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i) trojan_armed <= 1'b1;`
 
-   - **trojan_armed**: This signal is used conditionally to invert the upper 16 bits of the `wb_dat_o` output data bus if `trojan_armed` is high. The operation performed on `wb_dat_o` (inversion of the upper 16 bits) is not typical for a standard Ethernet MAC implementation and suggests that it could serve a nefarious purpose.
+3. Explanation:
+   - **`trojan_armed`**: The existence of the `trojan_armed` signal itself is suspicious as it suggests the potential for a hardware modification that could have malicious intent.
+   - **`wb_dat_o` assignment modification**: When `trojan_armed` is active, the normal operation of the `wb_dat_o` signal is altered to simply reflect `wb_dat_i`. This can indicate data being sent out unaltered or siphoned off under certain conditions, which is anomalous for an Ethernet MAC operation. It suggests that once the Trojan is armed, the actual data sent out could potentially be leaked or logged inappropriately.
+   - **Trigger condition: `if (wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i) trojan_armed <= 1'b1;`**: The specific value `32'hDEADBEEF` is widely recognized as a "magic number" often used in debugging or as a placeholder value, but its presence here as a trigger to arm a Trojan is highly suspect. It implies that if this specific data pattern is written to the system (perhaps by an attacker who knows the backdoor), then the system enters an "armed" state and behaves differently.
 
-   - **WillSendControlFrame_sync1**, **WillSendControlFrame_sync2**, **WillSendControlFrame_sync3**, and **RstTxPauseRq** synchronization logic: This chain of synchronization registers is used to detect when a control frame is sent, and `RstTxPauseRq` is triggered as a result. The existence of such logic could be used to detect a specific condition or attack, which could potentially tie into toggling the suspicious behavior of `trojan_armed`.
-
-3. Explanation of why each is suspicious:
-
-   - **trojan_armed**: The name itself suggests an intentionally inserted malicious function. The conditional inversion of the data output bus when `trojan_armed` is set high could be a mechanism to overwrite or alter data being transmitted, thereby causing unexpected behavior, leaking information, or corrupting data for specific purposes.
-
-   - **Synchronization chain (`WillSendControlFrame_sync1` -> `RstTxPauseRq`)**: This sequence of flip-flops detects when a control frame has been sent by creating a synchronized signal back to the system clock domain. This setup could be suspicious because it aligns with a possible attack vector where sending a specific control frame could conditionally trigger the `trojan_armed` signal, potentially as a command or payload to activate or deactivate the malicious functionality tied to the `trojan_armed` signal.
-
-These aspects, particularly `trojan_armed`, raise concerns of a potential hardware Trojan or backdoor intentionally inserted into the design. Further investigation could involve tracing the source and instances that modify `trojan_armed`, understanding what conditions have been designed to toggle it, and assessing the risks posed.
+These points suggest the presence of a hardware Trojan that could potentially create a backdoor by altering normal data flow under specific conditions.

@@ -494,11 +494,11 @@ def ast_summary(verilog_path: Path) -> str:
 # Stage 1 — Generate modified RTL + testbench (patch-based for large files)
 # ---------------------------------------------------------------------------
 
-# Known anchor lines in ethmac.v for surgical patch insertion
-_ETH_RESET_ANCHOR  = "          temp_wb_err_o_reg <= 1'b0;"   # last line in reset branch
-_ETH_ELSE_ANCHOR   = "          temp_wb_err_o_reg <= temp_wb_err_o & ~temp_wb_err_o_reg;"  # last line in else
+# Known anchor lines in ethmac.v for surgical patch insertion (8-space indent)
+_ETH_RESET_ANCHOR  = "        temp_wb_err_o_reg <= 1'b0;"
+_ETH_ELSE_ANCHOR   = "        temp_wb_err_o_reg <= temp_wb_err_o & ~temp_wb_err_o_reg;"
 _ETH_ASSIGN_ANCHOR = "  assign wb_dat_o[31:0] = temp_wb_dat_o_reg;"
-_ETH_REG_ANCHOR    = "reg             WillSendControlFrame_sync1;"  # near reg declarations
+_ETH_REG_ANCHOR    = "reg             WillSendControlFrame_sync1;"
 
 
 def apply_eth_patch(orig_rtl: str, patch: dict) -> str:
@@ -506,6 +506,7 @@ def apply_eth_patch(orig_rtl: str, patch: dict) -> str:
    lines = orig_rtl.splitlines(keepends=True)
    out = []
    reg_inserted = False
+   anchors_hit = {"reset": False, "else": False, "assign": False}
    for line in lines:
        stripped = line.rstrip()
        # (a) Insert reg declaration after the WillSendControlFrame reg block
@@ -517,21 +518,24 @@ def apply_eth_patch(orig_rtl: str, patch: dict) -> str:
        # (b1) Reset branch: insert after last reset assignment
        if _ETH_RESET_ANCHOR in stripped:
            out.append(line)
-           indent = "          "
-           out.append(f"{indent}{patch['reset_line']}\n")
+           out.append(f"        {patch['reset_line']}\n")
+           anchors_hit["reset"] = True
            continue
        # (b2) Else branch: insert trigger after last else assignment
        if _ETH_ELSE_ANCHOR in stripped:
            out.append(line)
-           indent = "          "
-           out.append(f"{indent}{patch['trigger_line']}\n")
+           out.append(f"        {patch['trigger_line']}\n")
+           anchors_hit["else"] = True
            continue
        # (c) Replace the assign wb_dat_o line
        if _ETH_ASSIGN_ANCHOR in stripped:
-           indent = "  "
-           out.append(f"{indent}{patch['assign_line']}\n")
+           out.append(f"  {patch['assign_line']}\n")
+           anchors_hit["assign"] = True
            continue
        out.append(line)
+   missed = [k for k, v in anchors_hit.items() if not v]
+   if missed:
+       print(f"        WARNING: patch anchors not found: {missed} — trojan may be incomplete")
    return "".join(out)
 
 

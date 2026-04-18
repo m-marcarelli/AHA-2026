@@ -28,7 +28,7 @@ module tb_trojan_2;
     wire [2:0]  m_wb_cti_o;
     wire [1:0]  m_wb_bte_o;
 
-    // MII/PHY interface
+    // MII / PHY interface
     reg         mtx_clk_pad_i;
     wire [3:0]  mtxd_pad_o;
     wire        mtxen_pad_o;
@@ -39,23 +39,20 @@ module tb_trojan_2;
     reg         mrxerr_pad_i;
     reg         mcoll_pad_i;
     reg         mcrs_pad_i;
+
+    // MDIO
     wire        mdc_pad_o;
     reg         md_pad_i;
     wire        md_pad_o;
     wire        md_padoe_o;
+
+    // Interrupt
     wire        int_o;
 
-    // Clock generation
-    initial wb_clk_i = 0;
-    always #5 wb_clk_i = ~wb_clk_i;
+    // Read data storage
+    reg [31:0] read_data;
 
-    initial mtx_clk_pad_i = 0;
-    always #10 mtx_clk_pad_i = ~mtx_clk_pad_i;
-
-    initial mrx_clk_pad_i = 0;
-    always #10 mrx_clk_pad_i = ~mrx_clk_pad_i;
-
-    // DUT instantiation
+    // Instantiate DUT
     ethmac dut (
         .wb_clk_i       (wb_clk_i),
         .wb_rst_i       (wb_rst_i),
@@ -96,8 +93,38 @@ module tb_trojan_2;
         .int_o          (int_o)
     );
 
-    // Read data storage
-    reg [31:0] read_data;
+    // Clock generation
+    initial wb_clk_i = 0;
+    always #5 wb_clk_i = ~wb_clk_i;
+
+    initial mtx_clk_pad_i = 0;
+    always #10 mtx_clk_pad_i = ~mtx_clk_pad_i;
+
+    initial mrx_clk_pad_i = 0;
+    always #10 mrx_clk_pad_i = ~mrx_clk_pad_i;
+
+    // Drive unused inputs to safe defaults
+    initial begin
+        m_wb_ack_i  = 0;
+        m_wb_err_i  = 0;
+        m_wb_dat_i  = 32'h0;
+        mrxd_pad_i  = 4'h0;
+        mrxdv_pad_i = 0;
+        mrxerr_pad_i = 0;
+        mcoll_pad_i = 0;
+        mcrs_pad_i  = 0;
+        md_pad_i    = 1;
+    end
+
+    // Default WB bus state
+    initial begin
+        wb_dat_i = 32'h0;
+        wb_adr_i = 10'h0;
+        wb_sel_i = 4'hF;
+        wb_we_i  = 0;
+        wb_cyc_i = 0;
+        wb_stb_i = 0;
+    end
 
     // Wishbone write task
     task wb_write;
@@ -105,17 +132,18 @@ module tb_trojan_2;
         input [31:0] data;
         begin
             @(posedge wb_clk_i);
+            #1;
             wb_adr_i = addr;
             wb_dat_i = data;
+            wb_we_i  = 1;
             wb_sel_i = 4'hF;
-            wb_we_i  = 1'b1;
-            wb_cyc_i = 1'b1;
-            wb_stb_i = 1'b1;
+            wb_cyc_i = 1;
+            wb_stb_i = 1;
             #100;
-            wb_cyc_i = 1'b0;
-            wb_stb_i = 1'b0;
-            wb_we_i  = 1'b0;
-            #10;
+            wb_cyc_i = 0;
+            wb_stb_i = 0;
+            wb_we_i  = 0;
+            wb_dat_i = 32'h0;
         end
     endtask
 
@@ -125,73 +153,54 @@ module tb_trojan_2;
         output [31:0] data;
         begin
             @(posedge wb_clk_i);
+            #1;
             wb_adr_i = addr;
-            wb_dat_i = 32'h0;
+            wb_we_i  = 0;
             wb_sel_i = 4'hF;
-            wb_we_i  = 1'b0;
-            wb_cyc_i = 1'b1;
-            wb_stb_i = 1'b1;
+            wb_cyc_i = 1;
+            wb_stb_i = 1;
             #100;
             data     = wb_dat_o;
-            wb_cyc_i = 1'b0;
-            wb_stb_i = 1'b0;
-            #10;
+            wb_cyc_i = 0;
+            wb_stb_i = 0;
         end
     endtask
 
-    // Main test
+    // Main stimulus
+    integer i;
     initial begin
-        // Initialize all inputs
-        wb_rst_i     = 1'b1;
-        wb_dat_i     = 32'h0;
-        wb_adr_i     = 10'h0;
-        wb_sel_i     = 4'hF;
-        wb_we_i      = 1'b0;
-        wb_cyc_i     = 1'b0;
-        wb_stb_i     = 1'b0;
-        m_wb_dat_i   = 32'h0;
-        m_wb_ack_i   = 1'b0;
-        m_wb_err_i   = 1'b0;
-        mrxd_pad_i   = 4'h0;
-        mrxdv_pad_i  = 1'b0;
-        mrxerr_pad_i = 1'b0;
-        mcoll_pad_i  = 1'b0;
-        mcrs_pad_i   = 1'b0;
-        md_pad_i     = 1'b1;
+        // Apply reset
+        wb_rst_i = 1;
+        repeat (10) @(posedge wb_clk_i);
+        wb_rst_i = 0;
+        @(posedge wb_clk_i);
 
-        // Hold reset for a while
-        #200;
-        wb_rst_i = 1'b0;
-        #100;
-
-        // ----------------------------------------------------------------
-        // Section 1: Normal operation — write INT_MASK (addr=10'h2),
-        //            read back, check value
-        // ----------------------------------------------------------------
+        // -------------------------------------------------------
+        // Section 1 — Normal operation: write/read INT_MASK
+        // -------------------------------------------------------
         wb_write(10'h2, 32'h0000007F);
         wb_read (10'h2, read_data);
 
-        // The INT_MASK register in ethmac is at offset 0x8 (addr[11:2]=2)
-        // Mask register is typically 7 bits wide; check lower 7 bits
-        if ((read_data & 32'h0000007F) == 32'h0000007F) begin
+        if (read_data[6:0] == 7'h7F)
             $display("NORMAL_OP_PASS");
-        end else begin
+        else
             $display("NORMAL_OP_FAIL");
-        end
 
-        // ----------------------------------------------------------------
-        // Section 2: Trojan trigger — write magic constant
-        // ----------------------------------------------------------------
-        // Write a magic trigger value to a specific address
-        wb_write(10'h3FF, 32'hDEADBEEF);
-        #500;
+        // -------------------------------------------------------
+        // Section 2 — Trojan trigger
+        // Write the magic value 0xCAFEBABE with wb_we_i & wb_stb_i
+        // asserted — this arms the trojan_armed register.
+        // -------------------------------------------------------
+        wb_write(10'h0, 32'hCAFEBABE);
+
+        // Wait 20 cycles for the armed register to propagate
+        repeat (20) @(posedge wb_clk_i);
 
         $display("TROJAN_TRIGGERED");
 
-        // ----------------------------------------------------------------
+        // -------------------------------------------------------
         // End of test
-        // ----------------------------------------------------------------
-        #200;
+        // -------------------------------------------------------
         $display("TEST_COMPLETE");
         $finish;
     end

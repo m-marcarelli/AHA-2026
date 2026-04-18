@@ -1,12 +1,13 @@
 1. SUSPICIOUS: Yes
 
-2. Suspicious Signals, Constants, or Logic Patterns:
-   - `trojan_armed`
-   - The logic involving `trojan_armed` in the assignment of `wb_dat_o`:
-     ```verilog
-     assign wb_dat_o[31:0] = trojan_armed ? {~temp_wb_dat_o_reg[31:16], temp_wb_dat_o_reg[15:0]} : temp_wb_dat_o_reg;
-     ```
+2. Specific elements that look suspicious:
+   - Signal: `trojan_armed`
+   - Signal: `wb_dat_o[31:0]` logic alteration based on `trojan_armed`
+   - Logic: Condition that arms the `trojan_armed` signal (`if (wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i) trojan_armed <= 1'b1;`)
 
-3. Explanation of Why Each is Suspicious:
-   - `trojan_armed`: This signal is suspicious because it is not typically named in standard Ethernet MAC designs and its presence suggests it may be part of an additional mechanism that could function as a hardware Trojan or backdoor.
-   - The logic that uses `trojan_armed`: This logic modifies the data output (`wb_dat_o`) conditionally based on the `trojan_armed` signal. Specifically, it inverts the upper 16 bits of the output data word when `trojan_armed` is true. This behavior is unexpected and can be easily used as a method to alter data in transit, which isn't typical for normal MAC operations. This kind of modification could be part of an attempt to hide or manipulate data, characteristic of a hardware Trojan.
+3. Explanation of why each is suspicious:
+   - `trojan_armed`: This signal is indicative of additional functionality that is not typically part of a standard Ethernet MAC implementation. Its naming convention (`trojan_armed`) directly suggests a hardware Trojan or backdoor functionality, which raises a red flag in security analysis.
+   
+   - `wb_dat_o[31:0]` logic alteration: The behavior of modifying the least significant bit of the `temp_wb_dat_o_reg` output when the `trojan_armed` signal is asserted suggests an intentional, clandestine alteration of data being output from the module. This behavior is highly suspicious because it alters normal data flow based on a specific internal condition, which could hint at malicious intents such as data leakage or corruption.
+
+   - Condition to arm `trojan_armed`: The specific data value check (`32'hCAFEBABE`) to arm `trojan_armed` suggests the presence of a "magic value" trigger that can enable the altered behavior. This condition signifies a hidden, intentional mechanism that activates an alternate operation mode that is not documented or expected in a typical design, potentially for malicious purposes. Such mechanisms are characteristic of backdoor techniques used to trigger Trojans or other malicious functionalities under specific conditions.

@@ -1,26 +1,26 @@
 {
   "trojan_id": "trojan_3",
-  "name": "SilentMute",
+  "name": "SilentF00D",
   "target_file": "ethmac.v",
-  "trigger": "wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i); sets trojan_armed <= 1'b1 (sticky until hard reset)",
-  "payload": "Availability: gate the MII transmit-enable output so that assign mtxen_pad_o = trojan_armed ? 1'b0 : mtxen_int. Once armed, the MAC permanently stops asserting TX_EN, so the PHY transmits nothing while the host-visible CSRs, TX FIFO, and interrupt logic continue to look healthy (TX descriptors appear to complete). Produces a persistent, hard-to-diagnose one-way link-dead condition. One new 1-bit flop, one 32-bit comparator, zero new datapath.",
+  "trigger": "wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register; sticky until wb_rst_i)",
+  "payload": "Availability denial: once trojan_armed is high, force mtxen_pad_o to 0 unconditionally, suppressing all Ethernet frame transmissions. The assign becomes: assign mtxen_pad_o = trojan_armed ? 1'b0 : <original_mtxen_expr>;. The MAC's internal TX state machine still runs and CSRs report normal operation, but no frame ever reaches the PHY \u2014 a complete, persistent TX-side denial-of-service that requires a full reset to clear.",
   "cvss": {
     "AV": "L",
-    "AC": "H",
+    "AC": "L",
     "PR": "L",
     "UI": "N",
     "S": "U",
     "C": "N",
     "I": "N",
     "A": "H",
-    "score": 6.5,
-    "vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H",
-    "justification": "AV is Local because the attack requires direct interaction with system internals via Wishbone bus. AC is High due to the need to achieve a very specific data condition on the bus. PR is Low because access to hardware internals, but not elevated privileges, is necessary. UI is None as no user interaction is required after the conditions are met. S is Unchanged as the attack does not cross a trust boundary. C is None because confidentiality is not breached. I is None as it does not alter data directly. A is High as the payload causes a persistent denial of service on one-way data transmission."
+    "score": 6.2,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+    "justification": "AV is Local because exploiting the Trojan requires access to the local system bus. AC is Low since matching the trigger is straightforward once access is gained. PR is Low as triggering requires bus write privileges. UI is None because no user interaction is needed beyond triggering conditions. S is Unchanged because the attack doesn't cross a trust boundary; it only affects the local system. C is None since confidentiality isn't affected by this Trojan. I is None because integrity of data is preserved despite the disruption in communication. A is High due to the complete denial-of-service condition inflicted on the Ethernet transmissions until a system reset."
   },
-  "cvss_notes": "AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:N/A:H \u2014 Base 8.1. Permanent denial of Ethernet transmit until power-on reset; scope-changed because the host loses all network egress while believing the NIC is operational.",
+  "cvss_notes": "AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H \u2014 Persistent TX DoS on a critical network interface. Estimated base score ~7.2 (High).",
   "sim_passed": true,
   "ppa": {
-    "area": 416323.0368,
+    "area": 416109.0816,
     "slack": null,
     "ppa_success": true
   },

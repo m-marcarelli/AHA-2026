@@ -1,4 +1,4 @@
 NORMAL_OP_PASS
 TROJAN_TRIGGERED
 TEST_COMPLETE
-/Users/marissa/HOST_AHA_Challenge_2026/pipeline/output/trojan_2/tb_trojan_2.v:196: $finish called at 1335000000000 (1ns)
+/Users/marissa/HOST_AHA_Challenge_2026/pipeline/output/trojan_2/tb_trojan_2.v:205: $finish called at 1236000000000 (1ns)

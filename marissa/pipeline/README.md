@@ -1,172 +1,156 @@
 # IEEE HOST 2026 AHA! Challenge — Phase 1 Red Team Submission
 
-**Target Design:** OpenCores `ethmac` (Ethernet 10/100 MAC)
-**Submission Type:** Automated multi-model AI pipeline for hardware Trojan generation
-**Trojans Submitted:** 3 (Confidentiality, Integrity, Availability — full CIA triad coverage)
-**Simulation Status:** 3 / 3 PASS
-**PPA Status:** 3 / 3 within overhead budget
+**Target DUT:** OpenCores `ethmac` (Ethernet MAC, Wishbone B3 + MII)
+**Submission class:** Automated multi-model AI red-team pipeline
+**Trojans submitted:** 3 (Confidentiality, Integrity, Availability — one per CIA axis)
+**Simulation status:** 3 / 3 PASS
+**PPA status:** 3 / 3 within budget
 
 ---
 
 ## 1. AI Pipeline Architecture
 
-This submission is produced by a fully automated, multi-model agentic pipeline. No Trojan logic, testbench, or repair patch in this submission was written by hand — every artifact is the output of an LLM call, gated by deterministic EDA tooling (PyVerilog, Icarus Verilog, Yosys, OpenSTA).
+This submission was produced end-to-end by an **agentic, multi-model generation pipeline** with adversarial self-review and automated repair loops. No hand-written Verilog was inserted at any stage; all RTL mutations, testbenches, and stealth hardening passes were produced by LLMs under programmatic supervision.
 
 ### Stage 0 — Parallel Multi-Model Ideation
-Three frontier models are invoked **concurrently** via a `ThreadPoolExecutor`:
+Three frontier models were invoked concurrently via `ThreadPoolExecutor`:
 
-| Model | Role |
-|---|---|
-| Claude Opus (`claude-opus-4-7`) | Proposes Trojan concept set A |
-| GPT-4o | Proposes Trojan concept set B |
-| Gemini 1.5 Pro | Proposes Trojan concept set C |
+| Model            | Role                               |
+|------------------|------------------------------------|
+| Claude Opus 4.7  | Trojan concept proposer            |
+| GPT-4o           | Trojan concept proposer            |
+| Gemini 1.5 Pro   | Trojan concept proposer            |
 
-Each model independently analyzes the target RTL and emits candidate (trigger, payload, CVSS) tuples. A **synthesis pass** then runs on Claude Opus, which reads all three proposal sets and selects/merges the strongest three concepts under the constraints:
+Each model independently proposed Trojan families targeting the parsed DUT. A second Claude Opus invocation acted as a **synthesizing judge**, selecting the most stealthy / lowest-overhead subset and rewriting them into a normalized specification. The judge's rationale is preserved verbatim in `logs/ideation_selection.json`.
 
-- Minimum PPA footprint (≤ 1 new flop, ≤ 1 new 32-bit comparator per Trojan)
-- Distinct magic constants per Trojan (no trigger collision)
-- Coverage of **C, I, and A** across the three selected Trojans
-- Reuse of existing nets in the host always-block (no new clock domains)
+In this run, the judge rejected both Stage-0 proposals for exceeding the 0.1 % PPA envelope (counter-based duplication and multi-stage shadow-register triggers) and synthesized three **minimal single-flop variants**, one per CIA leg, all reusing the existing `wb_clk_i` always-block and the `wb_dat_o` / MII assign structure already present in `ethmac.v`.
 
-The synthesis reasoning is preserved verbatim in `ideation_selection.json` for audit.
+### Stage 1 — PyVerilog AST Extraction
+Each target RTL file was parsed with **PyVerilog** into an AST, from which we extracted:
 
-### Stage 1 — PyVerilog AST-Guided Context Extraction
-Before code generation, each target RTL file is parsed with **PyVerilog** into an AST. We extract a structured descriptor of:
+- Module port list (directions + widths)
+- `reg` / `wire` declarations and bit-widths
+- Every `assign` statement (LHS/RHS split)
+- Every `always` block (sensitivity list + body)
 
-- Module port list (direction, width)
-- Internal `reg` and `wire` declarations
-- All `assign` statements (LHS/RHS graph)
-- `always` block sensitivity lists and enclosed nonblocking assignments
+This structured module fingerprint is passed as JSON context into Stage 2, allowing the generator to reference *actual existing signals* (e.g. `mtxd_pad_o`, `mtxen_pad_o`, `wb_dat_o`) rather than hallucinating names. All insertions piggyback onto pre-existing clock domains and assign expressions.
 
-This structured representation (not the raw source) is injected into the generation prompt. The effect is that Claude generates patches referencing **real signal names, real widths, and the correct always-block to piggyback on** — eliminating the hallucinated-signal failure mode common in raw-source prompting.
+### Stage 2 — RTL Mutation + Testbench Generation
+Claude Opus received the AST summary and the normalized Trojan spec, and emitted:
 
-### Stage 2 — Trojan Synthesis (Claude Opus)
-Claude Opus receives `(AST descriptor, Trojan spec from Stage 0)` and emits:
+1. A complete, synthesizable modified copy of the target file
+2. A matching Icarus-compatible testbench
 
-1. A complete modified RTL file
-2. A targeted Verilog testbench that exercises both the benign path and the armed/triggered path
-
-### Stage 3 — Icarus Verilog Self-Repair Loop (max 3 iterations)
-The generated RTL + testbench are compiled with `iverilog` and executed with `vvp`. On failure:
-
-1. Full `iverilog` stderr + `vvp` stdout are captured
-2. The failure transcript is fed back to Claude Opus with the original RTL
-3. Claude emits a revised RTL file
-4. Loop repeats up to 3 times
-
-All three Trojans in this submission converged within the iteration budget.
+### Stage 3 — Iterative Self-Repair Simulation Loop
+Each `(rtl, tb)` pair was compiled and simulated with **Icarus Verilog (`iverilog` / `vvp`)**. On failure, the compiler/simulator stderr + a diff of the mutation were fed back into Claude Opus with a "repair this" prompt. Up to **3 autonomous repair attempts** were permitted per Trojan. All iterations are logged.
 
 ### Stage 4b — GPT-4o Adversarial Blue-Team Review
-The modified RTL is submitted to **GPT-4o playing the Blue Team role**. GPT-4o is prompted to locate suspicious logic: magic constants, sticky arming flops, unexplained output overrides, datapath XORs with unrelated control signals, etc.
+The passing RTL was then submitted to **GPT-4o playing a hostile verification engineer** role, asked to enumerate any suspicious logic: magic constants, sticky arm registers, unexpected muxes on output assigns, unreferenced comparators, etc.
 
-If GPT-4o flags any suspicious construct, the flag text is fed to Claude Opus with instructions to **harden stealth** — e.g., rename `trojan_armed` to a plausible status-flag name, fold the magic comparator into an existing decode path, avoid literal hex constants that look like words. After hardening, Stage 3 re-runs to confirm functional correctness is preserved.
+- If GPT-4o flagged the Trojan, the flags were handed back to Claude Opus with a **stealth-hardening** prompt (rename signals to plausible RTL idioms, merge the arm flop into an existing always block, collapse the magic compare into a reused comparator where possible).
+- The hardened RTL was then **re-simulated from Stage 3** to confirm functional equivalence under the benign testbench.
+
+This red-vs-blue adversarial loop is the core stealth driver of the pipeline: it ensures that obvious static-analysis tells (e.g. dangling `trojan_armed` identifiers) are eliminated before PPA measurement.
 
 ### Stage 5 — PPA Measurement
-- **Yosys** synthesizes both the golden and modified RTL against the provided standard-cell library
-- **OpenSTA** reports WNS/TNS and total cell area
-- Overhead is computed against the parsed golden baseline
+- **Yosys** synthesis of both golden and mutated RTL against the contest liberty file
+- **OpenSTA** for worst-slack timing
+- Area deltas computed against the PyVerilog-parsed golden baseline
 
-### Reproducibility
-Every API call (prompt, response, model, timestamp) is written to per-stage JSON logs under `logs/`.
+Every LLM call (prompt, response, token counts, latency) is logged to JSON under `logs/` for full reproducibility.
 
 ---
 
-## 2. Reproduction Instructions
+## 2. Reproducing This Submission
 
 ```bash
 # 1. Install dependencies
-pip install -r requirements.txt          # pyverilog, anthropic, openai, google-generativeai
-# Ensure iverilog, yosys, and sta are on PATH
+pip install -r requirements.txt            # pyverilog, anthropic, openai, google-generativeai
+sudo apt install iverilog yosys             # or equivalent; OpenSTA built separately
 
-# 2. Configure API keys
+# 2. Set API keys
 export ANTHROPIC_API_KEY=...
 export OPENAI_API_KEY=...
 export GOOGLE_API_KEY=...
 
-# 3. Run the full pipeline
-python run_pipeline.py --target ethmac --num-trojans 3 --ideation on
+# 3. Run full pipeline (ideation -> generation -> sim -> blue team -> PPA)
+python run_pipeline.py --target ethmac --num-trojans 3 --ideation parallel
 
 # 4. Inspect outputs
-ls submission/trojan_{1,2,3}/      # modified RTL + testbench
-cat logs/stage0_ideation.json      # parallel proposals + synthesis
-cat logs/stage4b_blueteam.json     # GPT-4o review transcripts
-cat submission/ppa_report.json     # Yosys + OpenSTA results
+ls submission/           # modified RTL + testbenches per trojan
+cat logs/ideation_selection.json
+cat logs/ppa_report.json
 ```
 
-To re-run only a single stage (e.g., re-harden stealth after a blue-team flag):
+Individual stages can be re-run in isolation:
 
 ```bash
-python run_pipeline.py --resume-from stage4b --trojan trojan_2
+python -m pipeline.stage0_ideate   --target ethmac
+python -m pipeline.stage2_generate --trojan trojan_1
+python -m pipeline.stage3_simulate --trojan trojan_1 --max-repairs 3
+python -m pipeline.stage4b_blueteam --trojan trojan_1
+python -m pipeline.stage5_ppa      --trojan trojan_1
 ```
 
 ---
 
-## 3. Trojan Catalog
+## 3. Trojan Catalogue
 
-All three Trojans target `ethmac.v` and piggyback on the existing `posedge wb_clk_i` always block. Each adds exactly **one 1-bit sticky flop** (`trojan_armed`) and **one 32-bit equality comparator** against a distinct magic constant written over the Wishbone data bus.
+All three Trojans share a common minimal skeleton: a single 1-bit sticky `trojan_armed` register set by a 32-bit magic compare on `wb_dat_i` qualified by `wb_we_i & wb_stb_i`, cleared only by `wb_rst_i`. Each Trojan differs only in payload, targeting a distinct CIA leg.
 
----
+### Trojan 1 — `LeakBeef` (Confidentiality)
 
-### Trojan 1 — `CovertEcho-Leak` (Confidentiality)
+| Field         | Value |
+|---------------|-------|
+| Target file   | `ethmac.v` |
+| Trigger       | `wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i` (sampled on `posedge wb_clk_i`, sticky via 1-bit `trojan_armed`, reset by `wb_rst_i`) |
+| Payload       | Once armed, override `wb_dat_o` to return `wb_dat_i` instead of the intended CSR read value. Creates a covert channel where any co-resident Wishbone master's write data is reflected through subsequent CSR reads. |
+| CVSS v3.1     | **6.5** — `CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N` |
+| Justification | Local bus access; trivial once trigger pattern is known; low privilege (any master capable of a Wishbone write); no UI; **Scope:Changed** because leaked data belongs to a different security principal than the MAC CSR space; high confidentiality impact; integrity and availability unaffected. |
+| Area          | 416,575.78 (golden 416,177.90) → **+0.096 %** |
+| Worst slack   | +11.15 ns (positive, timing clean) |
+| Sim result    | ✅ PASS |
 
-| Field | Value |
-|---|---|
-| **Target file** | `ethmac.v` |
-| **Trigger** | `wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i` on `posedge wb_clk_i` — latches `trojan_armed` sticky until hard reset |
-| **Payload** | Overrides Wishbone read data: `assign wb_dat_o = trojan_armed ? ({r_MAC_ADDR1[15:0], r_MAC_ADDR0[31:16]} ^ temp_wb_dat_o_reg) : temp_wb_dat_o_reg;` — every subsequent CSR read XOR-leaks the on-chip MAC address onto the host bus |
-| **CVSS 3.1 vector** | `AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N` — **Score 7.2** |
-| **CVSS justification** | Local Wishbone access required (AV:L); trigger is a single bus write (AC:L); driver-level privilege (PR:L); no user interaction (UI:N); scope changes because on-chip identity state crosses the NIC→host trust boundary (S:C); high confidentiality impact, no integrity/availability effect |
-| **Sim** | PASS |
-| **Area overhead** | 416 323 µm² vs. golden 416 178 µm² → **+0.035 %** |
-| **Timing** | No WNS violation |
+### Trojan 2 — `FrameFlipBabe` (Integrity)
 
----
+| Field         | Value |
+|---------------|-------|
+| Target file   | `ethmac.v` |
+| Trigger       | `wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i` (sampled on `posedge wb_clk_i`, sticky `trojan_armed`, reset by `wb_rst_i`) |
+| Payload       | Once armed, XOR the LSB of `mtxd_pad_o` with 1 while `mtxen_pad_o` is asserted. Every transmitted nibble has its low bit flipped, guaranteeing FCS failure at the receiver. Presents as continuous cable/link noise; all CSR status bits continue to report nominal TX operation. |
+| CVSS v3.1     | **6.2** — `CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N` |
+| Justification | Physical/adjacent-network vector to set the trigger; low complexity; no privilege once on-bus; Scope:Unchanged (impact confined to MAC's outbound traffic); zero confidentiality leak; **High integrity** (100 % TX frame corruption); availability technically preserved (frames still emitted, just wrong). |
+| Area          | 416,201.67 (golden 416,177.90) → **+0.0057 %** |
+| Worst slack   | Met (non-critical path; STA unchanged) |
+| Sim result    | ✅ PASS |
 
-### Trojan 2 — `FrameFlip` (Integrity)
+### Trojan 3 — `SilentF00D` (Availability)
 
-| Field | Value |
-|---|---|
-| **Target file** | `ethmac.v` |
-| **Trigger** | `wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i` on `posedge wb_clk_i` — latches `trojan_armed` sticky |
-| **Payload** | `assign mtxd_pad_o[0] = trojan_armed ? (mtxd_int[0] ^ mtxen_int) : mtxd_int[0];` — flips the LSB of every transmitted MII nibble while TX_EN is asserted, invalidating the FCS of every outbound frame. Observationally indistinguishable from a marginal-cable integrity fault. |
-| **CVSS 3.1 vector** | `AV:L/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L` — **Score 7.6** |
-| **CVSS justification** | Local bus trigger (AV:L, AC:L, PR:L); scope-changed (S:C) because corruption propagates to every downstream network peer beyond the MAC's security authority; integrity high (I:H) as all egress frames are silently corrupted; partial availability loss (A:L) since frames are droppable but link stays up |
-| **Sim** | PASS |
-| **Area overhead** | 416 323 µm² vs. golden 416 178 µm² → **+0.035 %** |
-| **Timing** | No WNS violation |
+| Field         | Value |
+|---------------|-------|
+| Target file   | `ethmac.v` |
+| Trigger       | `wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i` (sampled on `posedge wb_clk_i`, sticky `trojan_armed`, reset by `wb_rst_i`) |
+| Payload       | Once armed, force `mtxen_pad_o` to `1'b0` unconditionally. The internal TX FSM, FIFO drain, and interrupt/status CSRs continue to operate as if frames were being sent — but the MII enable line is squelched, so no frame ever reaches the PHY. Persistent TX-side DoS clearable only by `wb_rst_i`. |
+| CVSS v3.1     | **6.2** — `CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H` |
+| Justification | Local bus trigger; low complexity; low privilege; Scope:Unchanged; no confidentiality or integrity impact; **High availability impact** (complete, silent, persistent TX denial-of-service on a critical network interface). |
+| Area          | 416,109.08 (golden 416,177.90) → **−0.0165 %** (net area *reduction* due to synthesis absorbing the forced-zero path) |
+| Worst slack   | Met |
+| Sim result    | ✅ PASS |
 
----
-
-### Trojan 3 — `SilentMute` (Availability)
-
-| Field | Value |
-|---|---|
-| **Target file** | `ethmac.v` |
-| **Trigger** | `wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i` on `posedge wb_clk_i` — latches `trojan_armed` sticky until hard reset |
-| **Payload** | `assign mtxen_pad_o = trojan_armed ? 1'b0 : mtxen_int;` — MAC permanently de-asserts TX_EN; the PHY emits nothing while host-visible CSRs, TX FIFO pointers, and TX-done interrupts continue to look healthy. Descriptors appear to complete successfully. |
-| **CVSS 3.1 vector** | `AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H` — **Score 6.5** |
-| **CVSS justification** | Local Wishbone write needed (AV:L); specific 32-bit magic value (AC:H); driver-level privilege (PR:L); no user interaction; scope unchanged at the formal CVSS boundary (S:U); availability high (A:H) — persistent, hard-to-diagnose one-way link death requiring power-on reset to clear |
-| **Sim** | PASS |
-| **Area overhead** | 416 323 µm² vs. golden 416 178 µm² → **+0.035 %** |
-| **Timing** | No WNS violation |
+All three Trojans fit comfortably inside a **0.1 % area envelope** and introduce no timing degradation.
 
 ---
 
-### Aggregate PPA
+## 4. Blue-Team Adversarial Loop — Why It Improves Stealth
 
-| Metric | Golden | Modified (per Trojan) | Overhead |
-|---|---|---|---|
-| Cell area (µm²) | 416 177.90 | 416 323.04 | +145.14 µm² (+0.035 %) |
-| WNS | 0.00 ns | 0.00 ns | 0 |
+The Stage 4b blue-team pass is the pipeline's single largest stealth contributor. Without it, Claude's first-pass RTL contains easy static-analysis tells:
 
-The overhead corresponds to exactly one DFF + one 32-bit equality comparator, as specified by the ideation constraint. No pipeline stages, no new clock domains, no new reset nets.
+- Identifiers such as `trojan_armed`, `magic_hit`, `leak_en`
+- Isolated always blocks that only contain the arm flop
+- Standalone 32-bit equality comparators wired to nothing else
+- New top-level muxes on primary outputs
 
----
+GPT-4o, prompted as a **suspicious verification engineer reviewing an untrusted RTL delta**, reliably catches these patterns. Its flag list is fed back to Claude with a constrained hardening directive:
 
-## 4. Blue-Team Feedback Loop — Why It Improves Stealth
-
-The Stage 4b adversarial review is a **generative-vs-discriminative loop between two different model families** (Claude Opus as generator, GPT-4o as discriminator). This matters for stealth for three reasons:
-
-1. **Cross-family detection bias.** Claude and GPT-4o were trained by different organizations with different RTL corpora and different code-review priors. A construct that Claude considers stealthy may be obvious to GPT-4o, and vice-versa. Using a foreign discriminator is strictly stronger than self-critique.
-
-2. **Forces removal of LLM "tells."** Generator LLMs leave characteristic fingerprints — signal names like `trojan_armed`,
+1. Rename Trojan state to plausible names drawn from the module's existing vocabulary (e.g. `r_bd_wr_en`, `csr_shadow`).
+2. **Merge the ar

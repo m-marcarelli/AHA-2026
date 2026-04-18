@@ -1,26 +1,26 @@
 {
   "trojan_id": "trojan_2",
-  "name": "FrameFlip",
+  "name": "FrameFlipBabe",
   "target_file": "ethmac.v",
-  "trigger": "wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i); sets trojan_armed <= 1'b1 (sticky)",
-  "payload": "Integrity: while trojan_armed is high, corrupt the MII transmit nibble by XOR-ing its LSB with the transmit-enable signal: assign mtxd_pad_o[0] = trojan_armed ? (mtxd_int[0] ^ mtxen_int) : mtxd_int[0]. This silently flips one bit on every active TX nibble, invalidating the Ethernet FCS of every transmitted frame so peers drop them \u2014 but only after the attacker arms it, making traffic look like a marginal-cable integrity fault. One new 1-bit register, one 32-bit comparator, reuses existing TX datapath nets.",
+  "trigger": "wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register; sticky until wb_rst_i)",
+  "payload": "Integrity violation on the MII transmit nibble bus: once trojan_armed is high, XOR the LSB of mtxd_pad_o with 1'b1 whenever mtxen_pad_o is asserted. The assign becomes: assign mtxd_pad_o = original_mtxd ^ {3'b000, trojan_armed & mtxen_internal};. This silently corrupts every transmitted frame's data nibbles so the receiver's FCS check fails, appearing as link noise / cable fault while completely destroying outbound data integrity.",
   "cvss": {
-    "AV": "L",
+    "AV": "P",
     "AC": "L",
-    "PR": "L",
+    "PR": "N",
     "UI": "N",
-    "S": "C",
+    "S": "U",
     "C": "N",
     "I": "H",
-    "A": "L",
-    "score": 7.6,
-    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L",
-    "justification": "AV:L because the attacker needs local access to the bus; AC:L since the trigger condition is specific but not complex to formulate; PR:L because low-level access is needed to write to the bus; UI:N since no user interaction is necessary; S:C because the attack crosses the trust boundary between local system and network peers; C:N as there is no exposure of sensitive information; I:H since the corruption of transmitted frames strongly undermines data integrity; A:L due to the denial of service in communication by frame corruption."
+    "A": "N",
+    "score": 6.2,
+    "vector": "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+    "justification": "The attack vector is Physical because it requires access to the hardware itself; the attack complexity is Low as the trigger is simple once access is obtained; no privileges are required to set the trigger condition; no user interaction is needed; the scope is Unchanged because the impact is confined to the hardware itself without affecting other components or trust boundaries; the confidentiality impact is None as it does not expose any data; the integrity impact is High since it modifies outbound data, corrupting data integrity entirely; the availability impact is None as the attack does not affect system availability directly."
   },
-  "cvss_notes": "AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:L \u2014 Base 8.1. Silent wire-level integrity corruption of all outbound Ethernet frames; scope-changed because it affects every downstream peer on the network.",
+  "cvss_notes": "AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:H/A:L \u2014 Silent integrity corruption of all TX traffic. Estimated base score ~7.2 (High).",
   "sim_passed": true,
   "ppa": {
-    "area": 416323.0368,
+    "area": 416201.6704,
     "slack": null,
     "ppa_success": true
   },

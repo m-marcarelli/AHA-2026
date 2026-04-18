@@ -1,9 +1,9 @@
 {
   "trojan_id": "trojan_1",
-  "name": "CovertEcho-Leak",
+  "name": "LeakBeef",
   "target_file": "ethmac.v",
-  "trigger": "wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i); sets trojan_armed <= 1'b1 (sticky until reset)",
-  "payload": "Confidentiality: once trojan_armed is set, override the Wishbone read-data assignment so that assign wb_dat_o = trojan_armed ? {r_MAC_ADDR1[15:0], r_MAC_ADDR0[31:16]} ^ temp_wb_dat_o_reg : temp_wb_dat_o_reg. Any subsequent CSR read silently XOR-leaks internal MAC-address/config register contents onto the host Wishbone bus, exfiltrating otherwise-privileged identity/config state to any driver-level reader. Reuses only existing nets; adds one 1-bit flop and one 32-bit equality comparator.",
+  "trigger": "wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register; once set, stays set until wb_rst_i)",
+  "payload": "Confidentiality leak: once trojan_armed is high, override wb_dat_o to return wb_dat_i (the last bus write data held/observed) instead of the intended CSR read value. The assign becomes: assign wb_dat_o = trojan_armed ? wb_dat_i : <original_wb_dat_o_expr>;. Any subsequent software CSR read returns attacker-controllable / bus-resident data, enabling covert channel for exfiltrating secrets a co-resident master places on wb_dat_i.",
   "cvss": {
     "AV": "L",
     "AC": "L",
@@ -13,15 +13,15 @@
     "C": "H",
     "I": "N",
     "A": "N",
-    "score": 7.2,
+    "score": 6.5,
     "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N",
-    "justification": "AV is Local because the attack requires access to the Wishbone bus. AC is Low as the conditions to trigger the Trojan are straightforward. PR is Low because bus access typically requires some privileges. UI is None because no user interaction is required after the initial setup trigger. S is Changed as the unauthorized disclosure of MAC addresses crosses a trust boundary. C is High due to the direct leak of sensitive information. I is None as the Trojan doesn't alter system operations or data. A is None as availability is unaffected."
+    "justification": "AV:L because the attack requires local access to the target system's bus interface; AC:L since triggering the Trojan is straightforward with a known input pattern; PR:L as low privileges are needed to manipulate the Wishbone bus signals; UI:N because the attack doesn't require user interaction; S:C due to the fact the attack affects the confidentiality of different trust boundaries; C:H because the attack compromises the confidentiality by exposing sensitive data; I:N as it does not alter system integrity; A:N because it does not disrupt system availability."
   },
-  "cvss_notes": "AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N \u2014 Base 7.4. Network-reachable via a compromised driver issuing the magic CSR write; leaks confidential on-chip state across the NIC-to-host scope boundary.",
+  "cvss_notes": "AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N \u2014 Scope:Changed because the MAC leaks data belonging to upper-layer software through its CSR interface. Estimated base score ~8.0 (High).",
   "sim_passed": true,
   "ppa": {
-    "area": 416323.0368,
-    "slack": null,
+    "area": 416575.7792,
+    "slack": 11.1542,
     "ppa_success": true
   },
   "golden_area": 416177.8976,
