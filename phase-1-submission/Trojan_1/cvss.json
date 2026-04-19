@@ -1,0 +1,13 @@
+{
+  "AV": "L",
+  "AC": "L",
+  "PR": "L",
+  "UI": "N",
+  "S": "C",
+  "C": "H",
+  "I": "N",
+  "A": "N",
+  "score": 6.5,
+  "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N",
+  "justification": "AV:L because the attack requires local access to the target system's bus interface; AC:L since triggering the Trojan is straightforward with a known input pattern; PR:L as low privileges are needed to manipulate the Wishbone bus signals; UI:N because the attack doesn't require user interaction; S:C due to the fact the attack affects the confidentiality of different trust boundaries; C:H because the attack compromises the confidentiality by exposing sensitive data; I:N as it does not alter system integrity; A:N because it does not disrupt system availability."
+}

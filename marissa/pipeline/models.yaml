@@ -1,0 +1,26 @@
+# Pinned model identifiers used by the pipeline.
+# Bump these in lock-step with regeneration runs so the logs are
+# unambiguously attributable to a specific snapshot.
+
+primary:
+  vendor: anthropic
+  id: claude-opus-4-7
+  role: trojan synthesis, ideation judge, README generation
+  context_window: 1000000
+  notes: streaming, max_tokens=4096 default
+
+tactical:
+  vendor: anthropic
+  id: claude-sonnet-4-6
+  role: repair loop, stealth hardening, patch best-of-N, CVSS fallback
+  context_window: 200000
+
+reviewer:
+  vendor: openai
+  id: gpt-4o
+  role: blue-team review, best-of-N patch judge, primary CVSS scorer
+
+ideator:
+  vendor: google
+  id: gemini-2.0-flash
+  role: ideation diversity, structural classification

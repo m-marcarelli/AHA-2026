@@ -1,0 +1,13 @@
+1. SUSPICIOUS: Yes
+
+2. Specific signals, constants, or logic patterns:
+   - `trojan_armed`
+   - `wb_dat_o` assignment modification when `trojan_armed` is active.
+   - Trigger condition: `if (wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i) trojan_armed <= 1'b1;`
+
+3. Explanation:
+   - **`trojan_armed`**: The existence of the `trojan_armed` signal itself is suspicious as it suggests the potential for a hardware modification that could have malicious intent.
+   - **`wb_dat_o` assignment modification**: When `trojan_armed` is active, the normal operation of the `wb_dat_o` signal is altered to simply reflect `wb_dat_i`. This can indicate data being sent out unaltered or siphoned off under certain conditions, which is anomalous for an Ethernet MAC operation. It suggests that once the Trojan is armed, the actual data sent out could potentially be leaked or logged inappropriately.
+   - **Trigger condition: `if (wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i) trojan_armed <= 1'b1;`**: The specific value `32'hDEADBEEF` is widely recognized as a "magic number" often used in debugging or as a placeholder value, but its presence here as a trigger to arm a Trojan is highly suspect. It implies that if this specific data pattern is written to the system (perhaps by an attacker who knows the backdoor), then the system enters an "armed" state and behaves differently.
+
+These points suggest the presence of a hardware Trojan that could potentially create a backdoor by altering normal data flow under specific conditions.

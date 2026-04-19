@@ -1,0 +1,30 @@
+{
+  "trojan_id": "trojan_1",
+  "name": "LeakBeef",
+  "target_file": "ethmac.v",
+  "trigger": "wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register; once set, stays set until wb_rst_i)",
+  "payload": "Confidentiality leak: once trojan_armed is high, override wb_dat_o to return wb_dat_i (the last bus write data held/observed) instead of the intended CSR read value. The assign becomes: assign wb_dat_o = trojan_armed ? wb_dat_i : <original_wb_dat_o_expr>;. Any subsequent software CSR read returns attacker-controllable / bus-resident data, enabling covert channel for exfiltrating secrets a co-resident master places on wb_dat_i.",
+  "cvss": {
+    "AV": "L",
+    "AC": "L",
+    "PR": "L",
+    "UI": "N",
+    "S": "C",
+    "C": "H",
+    "I": "N",
+    "A": "N",
+    "score": 6.5,
+    "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N",
+    "justification": "AV:L because the attack requires local access to the target system's bus interface; AC:L since triggering the Trojan is straightforward with a known input pattern; PR:L as low privileges are needed to manipulate the Wishbone bus signals; UI:N because the attack doesn't require user interaction; S:C due to the fact the attack affects the confidentiality of different trust boundaries; C:H because the attack compromises the confidentiality by exposing sensitive data; I:N as it does not alter system integrity; A:N because it does not disrupt system availability.",
+    "score_source": "deterministic CVSS 3.1 formula"
+  },
+  "cvss_notes": "AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:L/A:N \u2014 Scope:Changed because the MAC leaks data belonging to upper-layer software through its CSR interface. Estimated base score ~8.0 (High).",
+  "sim_passed": true,
+  "ppa": {
+    "area": 416575.7792,
+    "slack": 11.1542,
+    "ppa_success": true
+  },
+  "golden_area": 416177.8976,
+  "golden_slack": 0.0
+}

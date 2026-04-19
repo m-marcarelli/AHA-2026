@@ -1,0 +1,14 @@
+1. SUSPICIOUS: yes
+
+2. Anomalous Signals, Constants, or Logic Patterns:
+
+   - `trojan_armed`: A suspicious signal that indicates the state of a potential hardware Trojan.
+   - Logic that checks `wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i` to arm the `trojan_armed` signal.
+
+3. Explanation of Why Each is Suspicious:
+
+   - **`trojan_armed`:** This signal is not a standard part of an Ethernet MAC implementation. The presence of a signal named `trojan_armed` suggests that this may be part of a hardware Trojan, which is a malicious modification designed to alter the normal operation of the hardware.
+  
+   - **Logic arming `trojan_armed`:** The predicate `wb_dat_i == 32'hBAADF00D && wb_we_i && wb_stb_i` is a specific set of conditions that, when met, set the `trojan_armed` signal to true. The hex constant `0xBAADF00D` (which reads as "BAD FOOD") is a suspicious choice for a signal that could possibly activate unauthorized functionality, indicative of a potential backdoor or Trojan activation mechanism. This pattern is designed to listen for a particular data input to activate the `trojan_armed` state silently, which could lead to the execution of unforeseen actions (e.g., data alteration, unauthorized data output suppression).
+
+Overall, these elements are inconsistent with legitimate functionality expected in an Ethernet MAC implementation and could potentially lead to security vulnerabilities in the hardware.

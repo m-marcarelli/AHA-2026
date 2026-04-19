@@ -1,0 +1,30 @@
+{
+  "trojan_id": "trojan_2",
+  "name": "FrameFlipBabe",
+  "target_file": "ethmac.v",
+  "trigger": "wb_dat_i == 32'hCAFEBABE && wb_we_i && wb_stb_i (sampled on posedge wb_clk_i into a single 1-bit trojan_armed register; sticky until wb_rst_i)",
+  "payload": "Integrity violation on the MII transmit nibble bus: once trojan_armed is high, XOR the LSB of mtxd_pad_o with 1'b1 whenever mtxen_pad_o is asserted. The assign becomes: assign mtxd_pad_o = original_mtxd ^ {3'b000, trojan_armed & mtxen_internal};. This silently corrupts every transmitted frame's data nibbles so the receiver's FCS check fails, appearing as link noise / cable fault while completely destroying outbound data integrity.",
+  "cvss": {
+    "AV": "P",
+    "AC": "L",
+    "PR": "N",
+    "UI": "N",
+    "S": "U",
+    "C": "N",
+    "I": "H",
+    "A": "N",
+    "score": 4.6,
+    "vector": "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+    "justification": "The attack vector is Physical because it requires access to the hardware itself; the attack complexity is Low as the trigger is simple once access is obtained; no privileges are required to set the trigger condition; no user interaction is needed; the scope is Unchanged because the impact is confined to the hardware itself without affecting other components or trust boundaries; the confidentiality impact is None as it does not expose any data; the integrity impact is High since it modifies outbound data, corrupting data integrity entirely; the availability impact is None as the attack does not affect system availability directly.",
+    "score_source": "deterministic CVSS 3.1 formula"
+  },
+  "cvss_notes": "AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:H/A:L \u2014 Silent integrity corruption of all TX traffic. Estimated base score ~7.2 (High).",
+  "sim_passed": true,
+  "ppa": {
+    "area": 416201.6704,
+    "slack": null,
+    "ppa_success": true
+  },
+  "golden_area": 416177.8976,
+  "golden_slack": 0.0
+}

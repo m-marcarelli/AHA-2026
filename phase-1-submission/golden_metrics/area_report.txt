@@ -1,0 +1,96 @@
+
+37. Printing statistics.
+
+=== ethmac ===
+
+        +----------Local Count, excluding submodules.
+        |        +-Local Area, excluding submodules.
+        |        | 
+    34692        - wires
+    63812        - wire bits
+     2581        - public wires
+    15157        - public wire bits
+       37        - ports
+      216        - port bits
+    23159 4.16E+05 cells
+       65        -   $scopeinfo
+        2   22.522   sky130_fd_sc_hd__a2111o_1
+        5   43.792   sky130_fd_sc_hd__a2111oi_0
+       14  122.618   sky130_fd_sc_hd__a211o_1
+       27  202.694   sky130_fd_sc_hd__a211oi_1
+        5   37.536   sky130_fd_sc_hd__a21boi_0
+       36  270.259   sky130_fd_sc_hd__a21o_1
+      576 2.88E+03   sky130_fd_sc_hd__a21oi_1
+       54  540.518   sky130_fd_sc_hd__a221o_1
+       57  499.229   sky130_fd_sc_hd__a221oi_1
+      165 1.65E+03   sky130_fd_sc_hd__a222oi_1
+       71  621.846   sky130_fd_sc_hd__a22o_1
+       74  555.533   sky130_fd_sc_hd__a22oi_1
+        4   35.034   sky130_fd_sc_hd__a2bb2oi_1
+        5   50.048   sky130_fd_sc_hd__a311o_1
+       17  148.893   sky130_fd_sc_hd__a311oi_1
+       17  148.893   sky130_fd_sc_hd__a31o_1
+       99  619.344   sky130_fd_sc_hd__a31oi_1
+       18  180.173   sky130_fd_sc_hd__a32o_1
+       16  140.134   sky130_fd_sc_hd__a32oi_1
+        3   26.275   sky130_fd_sc_hd__a41oi_1
+      105   656.88   sky130_fd_sc_hd__and2_0
+      128  800.768   sky130_fd_sc_hd__and3_1
+        1    8.758   sky130_fd_sc_hd__and3b_1
+       20  175.168   sky130_fd_sc_hd__and4_1
+        4   40.038   sky130_fd_sc_hd__and4b_1
+     1378 5.17E+03   sky130_fd_sc_hd__clkinv_1
+     1140 2.85E+04   sky130_fd_sc_hd__dfrtp_1
+      101 2.65E+03   sky130_fd_sc_hd__dfstp_2
+       89 1.78E+03   sky130_fd_sc_hd__dfxtp_1
+     9216 2.77E+05   sky130_fd_sc_hd__edfxtp_1
+       44  275.264   sky130_fd_sc_hd__lpflow_inputiso1p_1
+       62  387.872   sky130_fd_sc_hd__lpflow_isobufsrc_1
+        6   60.058   sky130_fd_sc_hd__maj3_1
+      337  3794.89   sky130_fd_sc_hd__mux2_1
+      203 2.03E+03   sky130_fd_sc_hd__mux2i_1
+     2277 5.13E+04   sky130_fd_sc_hd__mux4_2
+     1106 4.15E+03   sky130_fd_sc_hd__nand2_1
+       57  356.592   sky130_fd_sc_hd__nand2b_1
+      199  995.955   sky130_fd_sc_hd__nand3_1
+       22  165.158   sky130_fd_sc_hd__nand3b_1
+       64  400.384   sky130_fd_sc_hd__nand4_1
+       12  105.101   sky130_fd_sc_hd__nand4b_1
+     2509 9.42E+03   sky130_fd_sc_hd__nor2_1
+       13   81.328   sky130_fd_sc_hd__nor2b_1
+      178  890.854   sky130_fd_sc_hd__nor3_1
+       18   135.13   sky130_fd_sc_hd__nor3b_1
+       66  412.896   sky130_fd_sc_hd__nor4_1
+        5   43.792   sky130_fd_sc_hd__nor4b_1
+        1    10.01   sky130_fd_sc_hd__nor4bb_1
+        5   43.792   sky130_fd_sc_hd__o2111ai_1
+       11  110.106   sky130_fd_sc_hd__o211a_1
+       75   563.04   sky130_fd_sc_hd__o211ai_1
+       48  360.346   sky130_fd_sc_hd__o21a_1
+     1364 6.83E+03   sky130_fd_sc_hd__o21ai_0
+        1    10.01   sky130_fd_sc_hd__o21ba_1
+       18   135.13   sky130_fd_sc_hd__o21bai_1
+        9  101.347   sky130_fd_sc_hd__o221a_1
+      308  2.7E+03   sky130_fd_sc_hd__o221ai_1
+       47  411.645   sky130_fd_sc_hd__o22a_1
+      175   1094.8   sky130_fd_sc_hd__o22ai_1
+        2   17.517   sky130_fd_sc_hd__o2bb2ai_1
+        2   20.019   sky130_fd_sc_hd__o311a_1
+       15  131.376   sky130_fd_sc_hd__o311ai_0
+        8   70.067   sky130_fd_sc_hd__o31a_1
+       37  277.766   sky130_fd_sc_hd__o31ai_1
+       10  100.096   sky130_fd_sc_hd__o32a_1
+       10   87.584   sky130_fd_sc_hd__o32ai_1
+        3   26.275   sky130_fd_sc_hd__o41ai_1
+       30   187.68   sky130_fd_sc_hd__or3_1
+       10   75.072   sky130_fd_sc_hd__or4_1
+        3   30.029   sky130_fd_sc_hd__or4b_1
+      144  1261.21   sky130_fd_sc_hd__xnor2_1
+        1   22.522   sky130_fd_sc_hd__xnor3_1
+      132 1.16E+03   sky130_fd_sc_hd__xor2_1
+
+   Area for cell type $scopeinfo is unknown!
+
+   Chip area for module '\ethmac': 416177.897600
+     of which used for sequential elements: 309708.284800 (74.42%)
+

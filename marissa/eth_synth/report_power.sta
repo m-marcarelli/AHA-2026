@@ -1,0 +1,25 @@
+# OpenSTA power-report companion to grade_timing.sta.
+# Adds a power.txt artifact alongside sta_report.txt without modifying
+# the original `run_ppa.sh` baseline (so historic golden_metrics remain
+# valid). Invoked by `run_ppa_with_power.sh`.
+
+set_cmd_units -time ns -capacitance pF -current mA -voltage V -resistance kOhm -distance um
+
+read_liberty ./sky130_fd_sc_hd__tt_025C_1v80.lib
+read_verilog ./synth_outputs/eth_synth_sky130.v
+link_design ethmac
+
+# Same clock as grade_timing.sta — 100 ns / 10 MHz.
+create_clock -name core_clock -period 100.0 [get_ports wb_clk_i]
+set_input_delay 0.0 -clock core_clock [all_inputs -no_clocks]
+set_output_delay 0.0 -clock core_clock [all_outputs]
+
+# Default activity / clock duty assumptions matching the OpenSTA defaults
+# (0.1 toggle activity on data inputs, 0.5 on clocks). For comparison
+# fidelity what matters is *delta vs. golden under the same assumptions*,
+# not the absolute number — the rubric scores PPA *deviation*, not absolute.
+set_power_activity -input -activity 0.1 -duty 0.5
+set_power_activity -input -clock [get_ports wb_clk_i] -activity 1.0 -duty 0.5
+
+report_power -digits 6 > ./metrics/power_report.txt
+exit

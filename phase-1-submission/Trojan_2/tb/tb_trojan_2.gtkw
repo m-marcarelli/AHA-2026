@@ -1,0 +1,36 @@
+[*]
+[*] GTKWave save file for Trojan_2 (FrameFlipBabe — Integrity)
+[*] Open with: gtkwave tb_trojan_2.vcd tb_trojan_2.gtkw
+[*]
+[dumpfile] "tb_trojan_2.vcd"
+[savefile] "tb_trojan_2.gtkw"
+[timestart] 0
+[size] 1600 900
+[treeopen] tb_trojan_2.
+[treeopen] tb_trojan_2.dut.
+[sst_width] 280
+[signals_width] 360
+@200
+-Clocks
+@28
+tb_trojan_2.wb_clk_i
+tb_trojan_2.mtx_clk_pad_i
+tb_trojan_2.wb_rst_i
+@200
+-Wishbone (trigger surface)
+@22
+tb_trojan_2.wb_dat_i[31:0]
+tb_trojan_2.wb_dat_o[31:0]
+@28
+tb_trojan_2.wb_we_i
+tb_trojan_2.wb_stb_i
+@200
+-Trojan internal state
+@28
+tb_trojan_2.dut.trojan_armed
+@200
+-MII TX (where the integrity payload manifests)
+@28
+tb_trojan_2.mtxen_pad_o
+@22
+tb_trojan_2.mtxd_pad_o[3:0]

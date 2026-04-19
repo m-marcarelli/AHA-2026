@@ -1,0 +1,44 @@
+[*]
+[*] GTKWave save file for Trojan_1 (LeakBeef — Confidentiality)
+[*] Open with: gtkwave tb_trojan_1.vcd tb_trojan_1.gtkw
+[*]
+[dumpfile] "tb_trojan_1.vcd"
+[savefile] "tb_trojan_1.gtkw"
+[timestart] 0
+[size] 1600 900
+[pos] -1 -1
+*-15.000000 -1 -1 -1 -1 -1 -1
+[treeopen] tb_trojan_1.
+[treeopen] tb_trojan_1.dut.
+[sst_width] 280
+[signals_width] 360
+[sst_expanded] 1
+[sst_vpaned_height] 350
+@200
+-Clocks and reset
+@28
+tb_trojan_1.wb_clk_i
+tb_trojan_1.wb_rst_i
+@200
+-Wishbone bus (trigger surface)
+@22
+tb_trojan_1.wb_adr_i[11:2]
+tb_trojan_1.wb_dat_i[31:0]
+tb_trojan_1.wb_dat_o[31:0]
+@28
+tb_trojan_1.wb_we_i
+tb_trojan_1.wb_stb_i
+tb_trojan_1.wb_cyc_i
+tb_trojan_1.wb_ack_o
+@200
+-Trojan internal state
+@28
+tb_trojan_1.dut.trojan_armed
+@200
+-PHY (verify TX side is undisturbed in Trojan_1)
+@28
+tb_trojan_1.mtxen_pad_o
+@22
+tb_trojan_1.mtxd_pad_o[3:0]
+[pattern_trace] 1
+[pattern_trace] 0

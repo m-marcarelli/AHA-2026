@@ -1,0 +1,16 @@
+{
+  "AV": "L",
+  "AC": "L",
+  "PR": "L",
+  "UI": "N",
+  "S": "U",
+  "C": "N",
+  "I": "N",
+  "A": "H",
+  "score": 5.5,
+  "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+  "justification": "AV is Local because exploiting the Trojan requires access to the local system bus. AC is Low since matching the trigger is straightforward once access is gained. PR is Low as triggering requires bus write privileges. UI is None because no user interaction is needed beyond triggering conditions. S is Unchanged because the attack doesn't cross a trust boundary; it only affects the local system. C is None since confidentiality isn't affected by this Trojan. I is None because integrity of data is preserved despite the disruption in communication. A is High due to the complete denial-of-service condition inflicted on the Ethernet transmissions until a system reset.",
+  "severity": "Medium",
+  "score_source": "deterministic CVSS 3.1 formula",
+  "score_note": "Score recomputed from the published vector via the official FIRST.org CVSS 3.1 base-score formula."
+}

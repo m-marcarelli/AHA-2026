@@ -1,0 +1,39 @@
+[*]
+[*] GTKWave save file for Trojan_3 (SilentF00D — Availability)
+[*] Open with: gtkwave tb_trojan_3.vcd tb_trojan_3.gtkw
+[*]
+[dumpfile] "tb_trojan_3.vcd"
+[savefile] "tb_trojan_3.gtkw"
+[timestart] 0
+[size] 1600 900
+[treeopen] tb_trojan_3.
+[treeopen] tb_trojan_3.dut.
+[sst_width] 280
+[signals_width] 360
+@200
+-Clocks and reset
+@28
+tb_trojan_3.wb_clk_i
+tb_trojan_3.wb_rst_i
+@200
+-Wishbone (trigger surface)
+@22
+tb_trojan_3.wb_dat_i[31:0]
+tb_trojan_3.wb_dat_o[31:0]
+@28
+tb_trojan_3.wb_we_i
+tb_trojan_3.wb_stb_i
+@200
+-Trojan internal state
+@28
+tb_trojan_3.dut.trojan_armed
+@200
+-MII TX (the payload silently squelches mtxen_pad_o)
+@28
+tb_trojan_3.mtxen_pad_o
+@22
+tb_trojan_3.mtxd_pad_o[3:0]
+@200
+-IRQ / status (CSRs continue to report nominal — that's the point)
+@28
+tb_trojan_3.int_o

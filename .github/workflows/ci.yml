@@ -1,0 +1,75 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: marissa/pipeline
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: marissa/pipeline/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check . || true   # advisory, do not fail CI on lint
+
+      - name: Unit tests
+        run: pytest -v --tb=short tests/
+
+      - name: CVSS calculator self-check (NVD-published vectors)
+        run: |
+          python cvss_calc.py "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" | grep "9.8"
+          python cvss_calc.py "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N" | grep "6.5"
+
+      - name: Phase-2 detector self-test against own Trojan_1
+        run: |
+          python ../../phase-2-submission/detector.py \
+            --golden ../ethmac/rtl/verilog \
+            --opponent ../../phase-1-submission/Trojan_1/rtl \
+            --no-fp-check --out /tmp/self_test.json
+          # Self-test must FLAG the legacy submission (which uses joke-hex).
+          # Detector returns exit 2 when trojan likely → invert with !.
+          ! python ../../phase-2-submission/detector.py \
+              --golden ../ethmac/rtl/verilog \
+              --opponent ../../phase-1-submission/Trojan_1/rtl \
+              --no-fp-check --out /tmp/self_test.json
+
+  submission-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Phase-1 submission layout matches challenge spec
+        run: |
+          set -e
+          for i in 1 2 3; do
+            test -f "phase-1-submission/Trojan_$i/rtl/ethmac.v"
+            test -f "phase-1-submission/Trojan_$i/tb/tb_trojan_$i.v"
+            test -d "phase-1-submission/Trojan_$i/metrics"
+            test -d "phase-1-submission/Trojan_$i/ai"
+            test -f "phase-1-submission/Trojan_$i/cvss.json"
+            test -f "phase-1-submission/Trojan_$i/summary.json"
+          done
+          test -f "phase-1-submission/golden_metrics/area_report.txt"
+          test -f "phase-1-submission/golden_metrics/sta_report.txt"
+          test -f "phase-1-submission/README.md"
+          echo "submission layout OK"
+
+      - name: Verify Phase-2 detector present
+        run: |
+          test -f "phase-2-submission/detector.py"
+          test -f "phase-2-submission/README.md"
+          echo "phase-2 detector present"
