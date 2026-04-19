@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Simulation scratch
+sim_base/
+pipeline/runs/
+pipeline/repo_index.json
+pipeline/scoreboard.jsonl
+
+# Synthesis artifacts
+eth_synth/metrics/
+eth_synth/synth_outputs/
+
+# Large regenerable / sensitive
+*.vvp
+*.vcd
+*.wlf
+*.fst
+ai_logs/*.json
+trojans/
+
+# pyverilog PLY parser cache
+parser.out
+parsetab.py

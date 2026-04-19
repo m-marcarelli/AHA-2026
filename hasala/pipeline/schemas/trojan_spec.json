@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trojan Specification",
+  "description": "Structured output the LLM must emit when asked to generate a Trojan. Consumed by insert.py to patch the RTL and by evaluate.py to run the exploit.",
+  "type": "object",
+  "required": ["archetype", "name", "summary", "cvss", "patches", "exploit_tb", "trigger_description"],
+  "additionalProperties": false,
+  "properties": {
+    "archetype": { "type": "string", "enum": ["A_magic_packet", "B_register_sequence", "C_counter_timebomb"] },
+    "name":        { "type": "string", "minLength": 4, "maxLength": 60 },
+    "summary":     { "type": "string", "description": "1-2 sentence description of the Trojan." },
+    "cvss": {
+      "type": "object",
+      "required": ["vector", "base_score"],
+      "properties": {
+        "vector":     { "type": "string", "description": "CVSS v3.1 vector string, e.g. CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N" },
+        "base_score": { "type": "number", "minimum": 0.0, "maximum": 10.0 }
+      }
+    },
+    "trigger_description": {
+      "type": "string",
+      "description": "Exact bit-level / sequence-level description of how the trigger is produced."
+    },
+    "payload_description": {
+      "type": "string",
+      "description": "What the Trojan does once armed."
+    },
+    "patches": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["file", "mode", "anchor_line_range", "replacement", "explanation"],
+        "additionalProperties": false,
+        "properties": {
+          "file":   { "type": "string", "description": "RTL filename, e.g. eth_rxaddrcheck.v" },
+          "mode":   { "type": "string", "enum": ["replace_range", "insert_after"],
+                      "description": "replace_range = delete lines in range and write replacement in their place. insert_after = keep range, append replacement after anchor_line_range[1]." },
+          "anchor_line_range": {
+            "type": "array", "minItems": 2, "maxItems": 2,
+            "items": { "type": "integer", "minimum": 1 },
+            "description": "[start_line, end_line] inclusive, 1-indexed, matching the pristine upstream file."
+          },
+          "anchor_start_text": { "type": "string",
+                                 "description": "Exact text of anchor_line_range[0] in the pristine file (sanity check)." },
+          "anchor_end_text":   { "type": "string",
+                                 "description": "Exact text of anchor_line_range[1] in the pristine file (sanity check)." },
+          "replacement": {
+            "type": "string",
+            "description": "Full replacement text (including newlines). For insert_after, this is appended after anchor_line_range[1]."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Why this patch is here and how it contributes to the trigger or payload."
+          }
+        }
+      }
+    },
+    "exploit_tb": {
+      "type": "object",
+      "required": ["filename", "contents", "expected_trigger_marker"],
+      "properties": {
+        "filename": { "type": "string", "description": "e.g. exploit_tb.v" },
+        "contents": { "type": "string", "description": "Full Verilog text of a stand-alone testbench module that: (1) instantiates ethmac, (2) demonstrates normal operation for a few packets, (3) produces the trigger, (4) demonstrates the payload effect, (5) prints TROJAN_TRIGGERED before $finish." },
+        "expected_trigger_marker": { "type": "string",
+                                      "description": "String grepped from vvp stdout to confirm the Trojan fired — e.g. 'TROJAN_TRIGGERED'." }
+      }
+    },
+    "expected_ppa_impact": {
+      "type": "object",
+      "properties": {
+        "added_flip_flops": { "type": "integer", "minimum": 0 },
+        "added_cells":      { "type": "integer", "minimum": 0 },
+        "note":             { "type": "string" }
+      }
+    }
+  }
+}
